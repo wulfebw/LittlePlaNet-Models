@@ -7,10 +7,10 @@ model_prototxt = '../features/deploy.prototxt'
 model_trained = '../models/best_citynet/_iter_100000.caffemodel'
 mean_path = '../data/mean_image.binaryproto'
 layer_name = 'pool5/7x7_s1'
-images_filepath = '../data/train.txt'
+image_list_filepath = '../data/train.txt'
 features_filepath = '../features/features.txt'
 labels_filepath = '../features/label.txt'
-output_image_filepaths = '../features/image_filepaths.txt'
+image_filepaths = '../features/image_filepaths.txt'
 
 def crop_center(img):
     return img[16:-16,16:-16,:]
@@ -24,8 +24,6 @@ def main():
     arr = np.array(caffe.io.blobproto_to_array(blob))
     mean = arr[0][:,16:-16,16:-16]
 
-    print mean.shape
-    raw_input()
     net = caffe.Classifier(model_prototxt, model_trained,
                           mean=mean,
                           channel_swap=(2,1,0),
@@ -36,7 +34,7 @@ def main():
     labels = []
     filepaths =[]
     count = 0
-    with open(images_filepath, 'r') as reader:
+    with open(image_list_filepath, 'r') as reader:
         with open(features_filepath, 'w') as fw:
             for line in reader:
                 count += 1
@@ -51,10 +49,14 @@ def main():
                 np.savetxt(fw, net.blobs[layer_name].data[0].reshape(1,-1), fmt='%.5g')
 
     with open(labels_filepath, 'w') as writer:
-        writer.writelines(labels)
+        for label in labels:
+            writer.write(label)
+            writer.write('\n')
 
-    with open(output_image_filepaths, 'w') as writer:
-        writer.writelines(filepaths)
+    with open(image_filepaths, 'w') as writer:
+        for filepath in filepaths:
+            writer.write(filepath)
+            writer.write('\n')
 
 if __name__ == "__main__":
     main()
