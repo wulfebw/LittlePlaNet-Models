@@ -10,6 +10,7 @@ layer_name = 'pool5/7x7_s1'
 images_filepath = '../data/train.txt'
 features_filepath = '../features/features.txt'
 labels_filepath = '../features/label.txt'
+output_image_filepaths = '../features/image_filepaths.txt'
 
 def crop_center(img):
     return img[16:-16,16:-16,:]
@@ -32,18 +33,28 @@ def main():
                           image_dims=(256, 256))
 
 
+    labels = []
+    filepaths =[]
+    count = 0
     with open(images_filepath, 'r') as reader:
         with open(features_filepath, 'w') as fw:
-            with open(labels_filepath, 'w') as lw:
-                for line in reader:
-                    image_path, label = line.strip().split(' ')
-                    print image_path
-                    print label
-                    raw_input()
-                    input_image = crop_center(caffe.io.load_image(image_path))
-                    prediction = net.predict([input_image], oversample=False)
-                    np.savetxt(fw, net.blobs[layer_name].data[0].reshape(1,-1), fmt='%.5g')
-                    lw.write(label)
+            for line in reader:
+                count += 1
+                if count > 1000:
+                    break
+                image_path, label = line.strip().split(' ')
+                labels.append(label)
+                filepaths.append(image_path)
+                print 'extracting from: {}'.format(image_path)
+                input_image = crop_center(caffe.io.load_image(image_path))
+                prediction = net.predict([input_image], oversample=False)
+                np.savetxt(fw, net.blobs[layer_name].data[0].reshape(1,-1), fmt='%.5g')
+
+    with open(labels_filepath, 'w') as writer:
+        writer.writelines(labels)
+
+    with open(output_image_filepaths, 'w') as writer:
+        writer.writelines(filepaths)
 
 if __name__ == "__main__":
     main()
